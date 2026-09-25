@@ -3,8 +3,8 @@
 Attendance tracker for freshman study tables, built for phones.
 Live site: https://oap22.github.io/study-tables/
 
-- **Site code** (this repo) is plain HTML/CSS/JS with no build step, served by GitHub Pages.
-- **Attendance data** lives in [oap22/study-tables-data](https://github.com/oap22/study-tables-data). Every save is a commit there, so nothing is ever lost and any change can be undone from its history.
+- **Site code** is plain HTML/CSS/JS with no build step, deployed to GitHub Pages by `.github/workflows/pages.yml` after the tests pass.
+- **Attendance data** lives in `data/` in this repo. The site reads and saves it through the GitHub API, so saves show up right away and don't redeploy the site. Every save is a commit, so nothing is ever lost and any change can be undone from the history.
 
 Anyone with the link can view. Editing needs the **edit key**, which you paste once per device under Settings.
 
@@ -26,19 +26,19 @@ All of this happens under **Settings** on the site. No code changes needed.
 
 To skip a single date (break, exam week), open it on the Attendance tab and tap **Cancel session**.
 
-The same data can also be edited by hand on GitHub: `index.json` lists the seasons, and `seasons/<name>.json` holds one season's roster, schedule, threshold and sessions (`days` uses 0 = Sunday … 6 = Saturday).
+The same data can also be edited by hand on GitHub: `data/index.json` lists the seasons, and `data/seasons/<name>.json` holds one season's roster, schedule, threshold and sessions (`days` uses 0 = Sunday … 6 = Saturday).
 
 ## Making an edit key
 
-Only the owner of the data repo can create a key.
+Only the repo owner (oap22) can create a key.
 
 1. Go to https://github.com/settings/personal-access-tokens/new (fine-grained token).
 2. Name: `study-tables edit`. Expiration: up to 1 year.
-3. Repository access: **Only select repositories** → `oap22/study-tables-data`.
+3. Repository access: **Only select repositories** → `oap22/study-tables`.
 4. Permissions → Repository permissions → **Contents: Read and write**. Leave everything else as is.
 5. Generate, copy the key, and paste it into Settings → Edit access on each phone or laptop. Send it privately to anyone else who takes attendance.
 
-The key can only change files in the data repo, not this site. If a key leaks, delete it on GitHub and make a new one. Past data can be restored from the data repo's commit history.
+The key can change files in this repo only, so give it just to people you trust. If a key leaks, delete it on GitHub and make a new one. Anything can be restored from the commit history.
 
 ## Stats rules
 

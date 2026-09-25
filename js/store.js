@@ -22,10 +22,11 @@ function encodeBase64(text) {
 }
 
 export class GitHubBackend {
-  constructor({ owner, repo, branch = 'main' }, token = null, fetchImpl = globalThis.fetch.bind(globalThis)) {
+  constructor({ owner, repo, branch = 'main', dir = '' }, token = null, fetchImpl = globalThis.fetch.bind(globalThis)) {
     this.owner = owner;
     this.repo = repo;
     this.branch = branch;
+    this.prefix = dir ? `${dir}/` : '';
     this.token = token;
     this.fetch = fetchImpl;
   }
@@ -37,7 +38,7 @@ export class GitHubBackend {
   }
 
   url(path) {
-    return `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${path}`;
+    return `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${this.prefix}${path}`;
   }
 
   // Returns { data, sha }. sha is null when read through the raw fallback.
@@ -55,7 +56,7 @@ export class GitHubBackend {
     // Unauthenticated API reads are rate limited; fall back to the raw file.
     if ((res.status === 403 || res.status === 429) && !this.token) {
       const raw = await this.fetch(
-        `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.branch}/${path}?t=${Date.now()}`,
+        `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.branch}/${this.prefix}${path}?t=${Date.now()}`,
         { cache: 'no-store' },
       );
       if (raw.ok) return { data: await raw.json(), sha: null };
@@ -78,12 +79,12 @@ export class GitHubBackend {
     if (res.ok) return (await res.json()).content.sha;
     if (res.status === 409 || res.status === 422) throw new ConflictError(`${path} changed on the server.`);
     if (res.status === 401 || res.status === 403 || res.status === 404) {
-      throw new AuthError('The edit key cannot write to the data repository.');
+      throw new AuthError('The edit key cannot save attendance.');
     }
     throw new Error(`Save failed (${res.status}).`);
   }
 
-  // True when the key can push to the data repo.
+  // True when the key can push to the repo.
   async canWrite() {
     if (!this.token) return false;
     const res = await this.fetch(`https://api.github.com/repos/${this.owner}/${this.repo}`, {

@@ -52,7 +52,7 @@ async function boot() {
   wireChrome();
   try {
     state.index = (await state.backend.read('index.json')).data;
-    if (!state.index) throw new Error('No data found. The data repository is missing index.json.');
+    if (!state.index) throw new Error('No data found: data/index.json is missing.');
     const saved = store.get(SEASON_PREF);
     await openSeason(state.index.seasons.includes(saved) ? saved : state.index.current);
   } catch (e) {
