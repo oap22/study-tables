@@ -72,6 +72,13 @@
         "Wyatt": "P",
         "Andy": "A"
       }
+    },
+    "2026-09-21": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Andy": "P"
+      }
     }
   }
 }
