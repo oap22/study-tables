@@ -51,5 +51,13 @@
     "end": null
   },
   "threshold": 0.8,
-  "sessions": {}
+  "sessions": {
+    "2026-09-28": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Bryce": "P"
+      }
+    }
+  }
 }
