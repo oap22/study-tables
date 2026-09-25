@@ -55,18 +55,7 @@
     "2026-09-28": {
       "canceled": false,
       "note": "cc46",
-      "marks": {
-        "Bryce": "A",
-        "Seba": "P",
-        "Andrew": "P",
-        "Cole": "E",
-        "Gunnar": "P",
-        "Pawel": "P",
-        "Ryan": "P",
-        "Dean": "P",
-        "Wyatt": "P",
-        "Andy": "A"
-      }
+      "marks": {}
     }
   }
 }
