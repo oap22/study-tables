@@ -218,7 +218,7 @@ function viewTake(season) {
           const m = marks[p.name];
           return `<li><button type="button" class="player" data-name="${esc(p.name)}" data-mark="${m ?? ''}" ${edit && !session.canceled ? '' : 'disabled'}
             aria-label="${esc(p.name)}: ${m ? MARK_LABEL[m] : 'not marked'}">
-            <span>${esc(p.name)}</span><span class="pill" data-mark="${m ?? ''}">${m ? MARK_LABEL[m] : 'Tap to mark'}</span></button></li>`;
+            <span>${esc(p.name)}</span><span class="pill" data-mark="${m ?? ''}">${m ? MARK_LABEL[m] : edit ? 'Tap to mark' : '—'}</span></button></li>`;
         }).join('')}
       </ul>
     </div>
