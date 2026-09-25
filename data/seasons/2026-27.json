@@ -47,82 +47,9 @@
       1,
       4
     ],
-    "start": "2026-09-14",
+    "start": "2026-09-28",
     "end": null
   },
   "threshold": 0.8,
-  "sessions": {
-    "2026-09-14": {
-      "canceled": false,
-      "note": "",
-      "marks": {
-        "Bryce": "P",
-        "Seba": "P",
-        "Andrew": "A",
-        "Cole": "P",
-        "Gunnar": "E",
-        "Pawel": "P",
-        "Ryan": "P",
-        "Dean": "A",
-        "Wyatt": "P",
-        "Andy": "P"
-      }
-    },
-    "2026-09-17": {
-      "canceled": false,
-      "note": "",
-      "marks": {
-        "Bryce": "P",
-        "Seba": "P",
-        "Andrew": "P",
-        "Cole": "P",
-        "Gunnar": "P",
-        "Pawel": "P",
-        "Ryan": "A",
-        "Dean": "P",
-        "Wyatt": "P",
-        "Andy": "P"
-      }
-    },
-    "2026-09-21": {
-      "canceled": false,
-      "note": "",
-      "marks": {
-        "Bryce": "P",
-        "Seba": "A",
-        "Andrew": "P",
-        "Cole": "P",
-        "Gunnar": "P",
-        "Pawel": "P",
-        "Ryan": "P",
-        "Dean": "A",
-        "Wyatt": "P",
-        "Andy": "E"
-      }
-    },
-    "2026-09-24": {
-      "canceled": false,
-      "note": "",
-      "marks": {
-        "Bryce": "P",
-        "Seba": "P",
-        "Andrew": "P",
-        "Cole": "A",
-        "Gunnar": "P",
-        "Pawel": "P",
-        "Ryan": "P",
-        "Dean": "P",
-        "Wyatt": "P",
-        "Andy": "P"
-      }
-    },
-    "2026-09-28": {
-      "canceled": false,
-      "note": "",
-      "marks": {
-        "Bryce": "P",
-        "Dean": "A"
-      }
-    }
-  }
+  "sessions": {}
 }
