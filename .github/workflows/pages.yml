@@ -35,6 +35,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # Stamp every script/style URL with the commit so a phone never mixes
+      # files from two different deploys out of its cache.
+      - name: Version asset URLs
+        run: |
+          V="${GITHUB_SHA::7}"
+          sed -i -E "s#(from '\./[a-z]+\.js)'#\1?v=$V'#g" js/*.js
+          sed -i -E "s#(src=\"js/app\.js)\"#\1?v=$V\"#; s#(href=\"css/style\.css)\"#\1?v=$V\"#" index.html
+          grep -c "?v=$V" index.html js/*.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
