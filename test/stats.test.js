@@ -106,8 +106,16 @@ test('session summary and CSV', () => {
   assert.equal(formatPct(sum.pct), '78%');
   const csv = toCSV(s).trim().split('\n');
   assert.equal(csv.length, 5);
-  assert.equal(csv[0], 'Date,Status,Present,Absent,Excused,Attendance %,Bryce,Seba,Andrew,Cole,Gunnar,Pawel,Ryan,Dean,Wyatt,Andy,Note');
-  assert.equal(csv[1], '2026-09-14,Held,7,2,1,78%,P,P,A,P,E,P,P,A,P,P,');
+  assert.equal(csv[0], 'Date,Status,Present,Absent,Excused,Attendance %,Andrew,Andy,Bryce,Cole,Dean,Gunnar,Pawel,Ryan,Seba,Wyatt,Note');
+  assert.equal(csv[1], '2026-09-14,Held,7,2,1,78%,A,P,P,P,A,E,P,P,P,P,');
+});
+
+test('players are listed alphabetically, including ones added later', () => {
+  const s = applyOps(sample(), [{ t: 'addPlayer', name: 'aaron' }, { t: 'addPlayer', name: 'Zed' }]);
+  assert.deepEqual(allPlayers(s).map((p) => p.name),
+    ['aaron', 'Andrew', 'Andy', 'Bryce', 'Cole', 'Dean', 'Gunnar', 'Pawel', 'Ryan', 'Seba', 'Wyatt', 'Zed']);
+  const sum = sessionSummary(s.sessions['2026-09-17'], allPlayers(s));
+  assert.deepEqual(sum.present, ['Andrew', 'Andy', 'Bryce', 'Cole', 'Dean', 'Gunnar', 'Pawel', 'Seba', 'Wyatt']);
 });
 
 test('empty season has no stats and no errors', () => {

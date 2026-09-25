@@ -1,6 +1,6 @@
 import { DATA_REPO } from './config.js';
 import { GitHubBackend, MemoryBackend, SeasonSync, ConflictError } from './store.js';
-import { computeStats, formatPct, toCSV, sessionSummary, allPlayers } from './stats.js';
+import { computeStats, formatPct, toCSV, sessionSummary, allPlayers, byName } from './stats.js';
 import { todayISO, longDate, shortDate, navigableDates, nextSessionDate, missedDates, DAY_NAMES, isLogged } from './dates.js';
 import { newSeason, hasRecords } from './model.js';
 
@@ -389,8 +389,8 @@ function viewHistory(season) {
 // ---------- Settings ----------
 function viewSettings(season) {
   const edit = state.canEdit;
-  const active = season.roster.filter((p) => p.active !== false);
-  const inactive = season.roster.filter((p) => p.active === false);
+  const active = season.roster.filter((p) => p.active !== false).sort(byName);
+  const inactive = season.roster.filter((p) => p.active === false).sort(byName);
   const sch = season.schedule || { days: [], start: today(), end: null };
   const nextName = suggestSeasonName(season.name);
 

@@ -7,7 +7,9 @@
 
 import { isLogged } from './dates.js';
 
-// Roster order first, then anyone who has marks but is no longer on the roster.
+export const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+// Everyone on the roster plus anyone with marks who is no longer on it, A–Z.
 export function allPlayers(season) {
   const players = season.roster.map((p) => ({ name: p.name, active: p.active !== false }));
   const known = new Set(players.map((p) => p.name));
@@ -19,7 +21,7 @@ export function allPlayers(season) {
       }
     }
   }
-  return players;
+  return players.sort(byName);
 }
 
 export function loggedSessions(season) {
