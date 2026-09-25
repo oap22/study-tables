@@ -1,0 +1,120 @@
+{
+  "name": "sample",
+  "roster": [
+    {
+      "name": "Bryce",
+      "active": true
+    },
+    {
+      "name": "Seba",
+      "active": true
+    },
+    {
+      "name": "Andrew",
+      "active": true
+    },
+    {
+      "name": "Cole",
+      "active": true
+    },
+    {
+      "name": "Gunnar",
+      "active": true
+    },
+    {
+      "name": "Pawel",
+      "active": true
+    },
+    {
+      "name": "Ryan",
+      "active": true
+    },
+    {
+      "name": "Dean",
+      "active": true
+    },
+    {
+      "name": "Wyatt",
+      "active": true
+    },
+    {
+      "name": "Andy",
+      "active": true
+    }
+  ],
+  "schedule": {
+    "days": [
+      1,
+      4
+    ],
+    "start": "2026-09-14",
+    "end": null
+  },
+  "threshold": 0.8,
+  "sessions": {
+    "2026-09-14": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Bryce": "P",
+        "Seba": "P",
+        "Andrew": "A",
+        "Cole": "P",
+        "Gunnar": "E",
+        "Pawel": "P",
+        "Ryan": "P",
+        "Dean": "A",
+        "Wyatt": "P",
+        "Andy": "P"
+      }
+    },
+    "2026-09-17": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Bryce": "P",
+        "Seba": "P",
+        "Andrew": "P",
+        "Cole": "P",
+        "Gunnar": "P",
+        "Pawel": "P",
+        "Ryan": "A",
+        "Dean": "P",
+        "Wyatt": "P",
+        "Andy": "P"
+      }
+    },
+    "2026-09-21": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Bryce": "P",
+        "Seba": "A",
+        "Andrew": "P",
+        "Cole": "P",
+        "Gunnar": "P",
+        "Pawel": "P",
+        "Ryan": "P",
+        "Dean": "A",
+        "Wyatt": "P",
+        "Andy": "E"
+      }
+    },
+    "2026-09-24": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Bryce": "P",
+        "Seba": "P",
+        "Andrew": "P",
+        "Cole": "A",
+        "Gunnar": "P",
+        "Pawel": "P",
+        "Ryan": "P",
+        "Dean": "P",
+        "Wyatt": "P",
+        "Andy": "P"
+      }
+    }
+  }
+}
