@@ -55,7 +55,9 @@
     "2026-09-28": {
       "canceled": false,
       "note": "cc46",
-      "marks": {}
+      "marks": {
+        "Ryan": "P"
+      }
     },
     "2026-09-24": {
       "canceled": false,
