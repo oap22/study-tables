@@ -99,6 +99,11 @@
         "Dean": "P",
         "Wyatt": "P"
       }
+    },
+    "2026-10-01": {
+      "canceled": true,
+      "note": "",
+      "marks": {}
     }
   }
 }
