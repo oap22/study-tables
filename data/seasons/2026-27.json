@@ -104,6 +104,13 @@
       "canceled": true,
       "note": "",
       "marks": {}
+    },
+    "2026-10-05": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Andrew": "P"
+      }
     }
   }
 }
