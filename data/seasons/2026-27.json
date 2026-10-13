@@ -125,6 +125,13 @@
       "canceled": true,
       "note": "",
       "marks": {}
+    },
+    "2026-10-12": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Dean": "P"
+      }
     }
   }
 }
