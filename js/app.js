@@ -1,6 +1,7 @@
 import { DATA_REPO } from './config.js';
 import { GitHubBackend, MemoryBackend, SeasonSync, ConflictError } from './store.js';
-import { computeStats, formatPct, toCSV, sessionSummary, allPlayers, byName } from './stats.js';
+import { computeStats, formatPct, toCSV, sessionSummary, sessionSeries, allPlayers, byName } from './stats.js';
+import { trendChart, playerBars, attendanceGrid, tallyBar, meter, bindCharts, resetCharts, hideTip } from './charts.js';
 import { todayISO, longDate, shortDate, navigableDates, nextSessionDate, missedDates, DAY_NAMES, isLogged } from './dates.js';
 import { newSeason, hasRecords } from './model.js';
 
@@ -32,9 +33,13 @@ const state = {
 const $view = document.getElementById('view');
 const $status = document.getElementById('save-status');
 const $picker = document.getElementById('season-picker');
+const $sub = document.getElementById('brand-sub');
 const seasonPath = (name) => `seasons/${name}.json`;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const MARK_LABEL = { P: 'Present', A: 'Absent', E: 'Excused' };
+const MARK_ICON = { P: '✓', A: '✕', E: '–' };
+// Numbered section heading, drawn like a sheet callout: "01 ─ Overview ────".
+const section = (n, title) => `<h3 class="section-title"><span class="idx">${String(n).padStart(2, '0')}</span>${title}</h3>`;
 const NEXT_MARK = { undefined: 'P', P: 'A', A: 'E', E: 'P' };
 
 // ---------- Boot ----------
@@ -106,6 +111,17 @@ function wireChrome() {
   $status.addEventListener('click', () => {
     if (state.sync?.status === 'error') state.sync.flush();
   });
+  // Charts are drawn to the measured width, so redraw them when it changes.
+  let lastWidth = $view.clientWidth, resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if ($view.clientWidth === lastWidth) return;
+      lastWidth = $view.clientWidth;
+      const el = document.activeElement;
+      if (['stats', 'history'].includes(state.tab) && !(el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) renderView();
+    }, 150);
+  });
   window.addEventListener('online', () => state.sync?.pending.length && state.sync.flush());
   window.addEventListener('beforeunload', (e) => {
     if (state.sync?.pending.length) e.preventDefault();
@@ -135,6 +151,7 @@ function renderPicker() {
     .map((s) => `<option value="${esc(s)}" ${s === state.seasonName ? 'selected' : ''}>${esc(s)}</option>`)
     .join('');
   $picker.hidden = seasons.length < 2;
+  $sub.textContent = state.seasonName ? `Freshmen · ${state.seasonName}` : 'Freshman attendance';
 }
 
 function renderStatus() {
@@ -152,6 +169,8 @@ function renderView() {
   const season = state.sync?.view;
   if (!season) return;
   const views = { take: viewTake, stats: viewStats, history: viewHistory, settings: viewSettings };
+  resetCharts();
+  hideTip();
   views[state.tab](season);
 }
 
@@ -177,6 +196,7 @@ function viewTake(season) {
   const counts = { P: 0, A: 0, E: 0 };
   players.forEach((p) => marks[p.name] && counts[marks[p.name]]++);
   const unmarked = players.filter((p) => !marks[p.name]).length;
+  const sessionPct = counts.P + counts.A ? counts.P / (counts.P + counts.A) : null;
 
   const tags = [];
   if (date === t) tags.push('Today');
@@ -196,29 +216,37 @@ function viewTake(season) {
         <button type="button" data-date="${dates[i - 1] ?? ''}" ${i > 0 ? '' : 'disabled'} aria-label="Previous session">‹</button>
         <div class="session-date">
           <h2>${longDate(date)}</h2>
-          <span class="session-tag">${tags.join(' · ')}</span>
+          <span class="session-tag ${date === t || date === next ? '' : 'quiet'}">${tags.join(' · ')}</span>
         </div>
         <button type="button" data-date="${dates[i + 1] ?? ''}" ${i < dates.length - 1 ? '' : 'disabled'} aria-label="Next session">›</button>
       </div>
       ${session.canceled ? `<div class="notice">This session is canceled and left out of every stat.</div>` : ''}
-      <div class="tally" aria-label="Session totals">
-        <div><span class="num">${counts.P}</span><span class="lbl">Present</span></div>
-        <div><span class="num">${counts.A}</span><span class="lbl">Absent</span></div>
-        <div><span class="num">${counts.E}</span><span class="lbl">Excused</span></div>
-        <div><span class="num">${unmarked}</span><span class="lbl">Unmarked</span></div>
+      <div class="panel" aria-label="Session totals">
+        <div class="scoreboard">
+          <div class="score">${counts.P}<small>/${players.length}</small></div>
+          <div>
+            <div class="score-label"><i class="fill-p"></i>Present${sessionPct !== null ? ` · ${formatPct(sessionPct)} attendance` : ''}</div>
+            ${tallyBar({ ...counts, U: unmarked })}
+          </div>
+        </div>
+        <div class="tally-counts">
+          <div><span class="num">${counts.A}</span><span class="lbl"><i class="fill-a"></i>Absent</span></div>
+          <div><span class="num">${counts.E}</span><span class="lbl"><i class="fill-e-hatch"></i>Excused</span></div>
+          <div><span class="num">${unmarked}</span><span class="lbl"><i class="fill-u"></i>Open</span></div>
+        </div>
       </div>
       ${edit ? `
       <div class="session-actions">
         <button type="button" class="btn dark" id="all-present" ${unmarked && !session.canceled ? '' : 'disabled'}>${unmarked === players.length ? 'All present' : `Rest present (${unmarked})`}</button>
         <button type="button" class="btn" id="toggle-cancel">${session.canceled ? 'Restore session' : 'Cancel session'}</button>
       </div>
-      <p class="hint">Tap a name to switch: Present → Absent → Excused</p>` : ''}
+      <p class="hint">Tap a name: Present → Absent → Excused</p>` : ''}
       <ul class="roster">
         ${players.map((p) => {
           const m = marks[p.name];
           return `<li><button type="button" class="player" data-name="${esc(p.name)}" data-mark="${m ?? ''}" ${edit && !session.canceled ? '' : 'disabled'}
             aria-label="${esc(p.name)}: ${m ? MARK_LABEL[m] : 'not marked'}">
-            <span>${esc(p.name)}</span><span class="pill" data-mark="${m ?? ''}">${m ? MARK_LABEL[m] : edit ? 'Tap to mark' : '—'}</span></button></li>`;
+            <span>${esc(p.name)}</span><span class="pill" data-mark="${m ?? ''}">${m ? `<span aria-hidden="true">${MARK_ICON[m]}</span>${MARK_LABEL[m]}` : edit ? 'Tap to mark' : '—'}</span></button></li>`;
         }).join('')}
       </ul>
     </div>
@@ -270,15 +298,22 @@ function bindGo() {
 
 // ---------- Stats ----------
 function namesList(players, detail = () => '') {
-  if (!players.length) return `<div class="hl-names none">No one yet</div>`;
-  return `<div class="hl-names">${players.map((p) => esc(p.name) + detail(p)).join(', ')}</div>`;
+  if (!players.length) return `<div class="aw-names none">No one yet</div>`;
+  return `<div class="aw-names">${players.map((p) => esc(p.name) + detail(p)).join(', ')}</div>`;
 }
+
+// Width available to a chart inside a panel (main and panel padding removed).
+const chartWidth = () => Math.max(260, $view.clientWidth - 32 - 30);
 
 function viewStats(season) {
   const { highlights: h, players } = computeStats(season);
+  const series = sessionSeries(season);
   const thr = Math.round(h.threshold * 100);
-  const hl = (title, value, body, flag = false) =>
-    `<div class="hl ${flag ? 'flag' : ''}"><span class="hl-title">${title}</span>${value != null ? `<span class="hl-value">${value}</span>` : ''}${body}</div>`;
+  const active = players.filter((p) => p.active);
+  const avgPresent = series.length ? series.reduce((n, s) => n + s.present, 0) / series.length : null;
+  const last = series.at(-1);
+  const award = (title, value, body, flag = false) =>
+    `<li class="${flag ? 'flag' : ''}"><span class="aw-title">${title}</span><span class="aw-value">${value ?? ''}</span>${body}</li>`;
 
   const cols = [
     ['name', 'Player'], ['present', 'P'], ['absent', 'A'], ['excused', 'E'],
@@ -292,22 +327,66 @@ function viewStats(season) {
     if (vb === null) return -1;
     return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * dir;
   });
+  const w = chartWidth();
 
   $view.innerHTML = `
-    <div class="kpis">
-      <div class="kpi"><span class="num">${h.sessionsLogged}</span><span class="lbl">Sessions logged</span></div>
-      <div class="kpi dark"><span class="num">${formatPct(h.teamPct)}</span><span class="lbl">Team attendance</span></div>
+    <dl class="title-block">
+      <div><dt>Season</dt><dd>${esc(season.name)}</dd></div>
+      <div><dt>Sessions</dt><dd>${h.sessionsLogged}</dd></div>
+      <div><dt>Roster</dt><dd>${active.length}</dd></div>
+      <div><dt>Flag under</dt><dd>${thr}%</dd></div>
+    </dl>
+
+    ${section(1, 'Overview')}
+    <div class="panel hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-label">Team attendance</div>
+          <div class="hero-num">${formatPct(h.teamPct)}</div>
+        </div>
+        <div class="hero-side">${last ? `Last session<br><b>${formatPct(last.pct)}</b> · ${shortDate(last.date)}` : 'No sessions yet'}</div>
+      </div>
+      ${meter(h.teamPct, h.threshold)}
+      <div class="meter-scale"><span>0%</span><span>Flag ${thr}%</span><span>100%</span></div>
     </div>
-    <div class="highlights">
-      ${hl('Most sessions attended', h.mostAttended.value, namesList(h.mostAttended.players))}
-      ${hl('Highest attendance', h.highestPct.value != null ? formatPct(h.highestPct.value) : null, namesList(h.highestPct.players))}
-      ${hl('Perfect attendance', null, namesList(h.perfect))}
-      ${hl('Most absences', h.mostAbsences.value, namesList(h.mostAbsences.players, (p) => ` (${formatPct(p.pct)})`))}
-      ${hl('Longest current streak', h.longestStreak.value, namesList(h.longestStreak.players))}
-      ${hl(`Under ${thr}%`, null, namesList(h.underThreshold, (p) => ` ${formatPct(p.pct)}`), h.underThreshold.length > 0)}
+    <div class="tiles">
+      <div class="tile"><span class="num">${h.perfect.length}</span><span class="lbl">Perfect</span></div>
+      <div class="tile ${h.underThreshold.length ? 'alert' : ''}"><span class="num">${h.underThreshold.length}</span><span class="lbl">Under ${thr}%</span></div>
+      <div class="tile"><span class="num">${avgPresent === null ? '—' : avgPresent.toFixed(1)}</span><span class="lbl">Avg present</span></div>
     </div>
 
-    <h3 class="section-title">Players</h3>
+    ${section(2, 'Trend')}
+    <div class="panel">
+      <div class="panel-head"><h4>Team % by session</h4><span class="sub">Red = under ${thr}%</span></div>
+      ${trendChart(series, { threshold: h.threshold, width: w })}
+    </div>
+
+    ${section(3, 'Players')}
+    <div class="panel">
+      <div class="panel-head"><h4>Sessions by player</h4><span class="sub">Best attendance first</span></div>
+      ${playerBars(players, { threshold: h.threshold, width: w })}
+      <div class="legend"><span><i class="fill-p"></i>Present</span><span><i class="fill-e-hatch"></i>Excused</span><span><i class="fill-a"></i>Absent</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h4>Attendance grid</h4><span class="sub">Newest on the right</span></div>
+      ${attendanceGrid(series, allPlayers(season))}
+      <div class="legend"><span><i class="fill-p"></i>Present</span><span><i class="fill-a"></i>Absent (A)</span><span><i class="fill-e-hatch"></i>Excused (E)</span><span><i class="fill-u"></i>Not marked</span></div>
+    </div>
+
+    ${section(4, 'Highlights')}
+    <div class="panel">
+      <ul class="awards">
+        ${award('Most sessions attended', h.mostAttended.value, namesList(h.mostAttended.players))}
+        ${award('Highest attendance', h.highestPct.value != null ? formatPct(h.highestPct.value) : null, namesList(h.highestPct.players))}
+        ${award('Perfect attendance', h.perfect.length || null, namesList(h.perfect))}
+        ${award('Longest current streak', h.longestStreak.value, namesList(h.longestStreak.players))}
+        ${award('Most absences', h.mostAbsences.value, namesList(h.mostAbsences.players, (p) => ` (${formatPct(p.pct)})`))}
+        ${award(`Under ${thr}%`, h.underThreshold.length || null, namesList(h.underThreshold, (p) => ` ${formatPct(p.pct)}`), h.underThreshold.length > 0)}
+      </ul>
+    </div>
+
+    ${section(5, 'Table')}
     <div class="table-wrap">
       <table>
         <thead><tr>${cols.map(([k, label]) =>
@@ -323,9 +402,10 @@ function viewStats(season) {
         </tbody>
       </table>
     </div>
-    <p class="small muted">Attendance % = Present ÷ (Present + Absent). Excused sessions don't count against anyone. Tap a column to sort.</p>
+    <p class="small muted">Attendance % = Present ÷ (Present + Absent). Excused sessions don't count against anyone. Tap a chart for details, or a column to sort.</p>
   `;
 
+  bindCharts($view);
   $view.querySelectorAll('[data-sort]').forEach((b) =>
     b.addEventListener('click', () => {
       const k = b.dataset.sort;
@@ -344,7 +424,7 @@ function viewHistory(season) {
 
   $view.innerHTML = `
     <div class="history-head">
-      <h2>All sessions</h2>
+      <h2>All sessions <span class="muted mono small">${dates.length}</span></h2>
       <button type="button" class="btn small" id="csv" ${dates.length ? '' : 'disabled'}>Export CSV</button>
     </div>
     ${dates.length ? '' : `<p class="empty">No sessions logged yet.</p>`}
@@ -358,11 +438,12 @@ function viewHistory(season) {
       const sum = sessionSummary(s, players);
       const line = (cls, letter, list) => list.length ? `<div class="sc-line ${cls}"><b>${letter}</b>${list.map(esc).join(', ')}</div>` : '';
       return `<div class="session-card">
-        <div class="sc-top"><span class="sc-date">${shortDate(d)}</span><span class="sc-pct">${formatPct(sum.pct)}</span></div>
+        <div class="sc-top"><span class="sc-date">${shortDate(d)}</span><span class="sc-pct ${sum.pct !== null && sum.pct < (season.threshold ?? 0.8) ? 'low' : ''}">${formatPct(sum.pct)}</span></div>
+        ${tallyBar({ P: sum.present.length, A: sum.absent.length, E: sum.excused.length })}
         <div class="sc-counts">${sum.present.length} present · ${sum.absent.length} absent · ${sum.excused.length} excused</div>
         ${line('p', 'P', sum.present)}${line('a', 'A', sum.absent)}${line('e', 'E', sum.excused)}
         ${s.note ? `<div class="sc-note">${esc(s.note)}</div>` : ''}
-        <button type="button" class="linklike small" data-open="${d}">${state.canEdit ? 'Edit' : 'Open'}</button>
+        <div class="sc-open"><button type="button" class="linklike small" data-open="${d}">${state.canEdit ? 'Edit' : 'Open'}</button></div>
       </div>`;
     }).join('')}
   `;
@@ -395,7 +476,7 @@ function viewSettings(season) {
   const nextName = suggestSeasonName(season.name);
 
   $view.innerHTML = `
-    <h3 class="section-title">Edit access</h3>
+    ${section(1, `Edit access`)}
     <div class="card">
       ${DEMO ? `<p>Demo mode: sample data in memory, nothing is saved.</p>` : edit
         ? `<p><span class="status-ok">Editing is on for this device.</span></p>
@@ -409,7 +490,7 @@ function viewSettings(season) {
     </div>
 
     ${edit ? `
-    <h3 class="section-title">Roster · ${esc(season.name)}</h3>
+    ${section(2, `Roster · ${esc(season.name)}`)}
     <div class="card">
       <ul class="settings-list">
         ${active.map((p) => `<li><span class="name">${esc(p.name)}</span><span class="btn-row">
@@ -428,7 +509,7 @@ function viewSettings(season) {
         </ul>` : ''}
     </div>
 
-    <h3 class="section-title">Schedule &amp; flag</h3>
+    ${section(3, `Schedule &amp; flag`)}
     <form class="card" id="schedule-form">
       <span class="field-label">Meeting days</span>
       <div class="days">${DAY_NAMES.map((d, i) =>
@@ -444,7 +525,7 @@ function viewSettings(season) {
       <span class="small muted" id="schedule-msg"></span>
     </form>
 
-    <h3 class="section-title">New school year</h3>
+    ${section(4, `New school year`)}
     <form class="card" id="season-form">
       <p class="small">Starts a fresh season with a new roster. The meeting days and flag carry over. ${esc(season.name)} stays viewable from the season menu at the top.</p>
       <div class="grid-2">

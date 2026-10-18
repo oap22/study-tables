@@ -42,6 +42,8 @@ The key can change files in this repo only, so give it just to people you trust.
 
 ## Stats rules
 
+- The Stats tab shows team attendance, a per-session trend line, a per-player bar chart and a player × session grid. Tap any chart for the numbers; the table at the bottom has the same values.
+
 - Attendance % = Present ÷ (Present + Absent). Excused never counts against anyone; only-excused shows "—".
 - Current streak = Presents since the last Absent; Excused doesn't break it.
 - Ties are all listed. Rank is standard competition ranking (1, 1, 3…).

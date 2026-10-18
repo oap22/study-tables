@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { computeStats, formatPct, toCSV, sessionSummary, allPlayers } from '../js/stats.js';
+import { computeStats, formatPct, toCSV, sessionSummary, allPlayers, sessionSeries } from '../js/stats.js';
 import { nextSessionDate, missedDates, scheduledDates } from '../js/dates.js';
 import { applyOps } from '../js/model.js';
 
@@ -126,4 +126,14 @@ test('empty season has no stats and no errors', () => {
   assert.equal(h.teamPct, null);
   assert.deepEqual(h.mostAttended.players, []);
   assert.deepEqual(h.perfect, []);
+});
+
+test('session series gives counts and team % per counted session, oldest first', () => {
+  const season = sample();
+  season.sessions['2026-09-28'] = { canceled: true, note: '', marks: {} };
+  const rows = sessionSeries(season);
+  assert.deepEqual(rows.map((r) => r.date), ['2026-09-14', '2026-09-17', '2026-09-21', '2026-09-24']);
+  assert.deepEqual([rows[0].present, rows[0].absent, rows[0].excused], [7, 2, 1]);
+  assert.equal(formatPct(rows[0].pct), '78%');
+  assert.equal(rows[2].marks.Andy, 'E');
 });

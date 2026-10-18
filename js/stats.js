@@ -47,6 +47,15 @@ export function sessionSummary(session, players) {
   };
 }
 
+// One row per counted session, oldest first, for the trend and grid charts.
+export function sessionSeries(season) {
+  const players = allPlayers(season);
+  return loggedSessions(season).map((s) => {
+    const sum = sessionSummary(s, players);
+    return { date: s.date, present: sum.present.length, absent: sum.absent.length, excused: sum.excused.length, pct: sum.pct, marks: s.marks || {} };
+  });
+}
+
 function playerStats(name, active, sessions) {
   let present = 0, absent = 0, excused = 0, streak = 0, lastAbsence = null;
   for (const s of sessions) {
