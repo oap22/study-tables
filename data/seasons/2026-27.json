@@ -146,6 +146,13 @@
       "canceled": true,
       "note": "",
       "marks": {}
+    },
+    "2026-10-19": {
+      "canceled": false,
+      "note": "",
+      "marks": {
+        "Andrew": "P"
+      }
     }
   }
 }
